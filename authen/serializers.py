@@ -156,8 +156,12 @@ class GetMeSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-
-        representation['photo'] = UserPhoto.objects.filter(user=instance).values('id' , 'image')
+        user_photo = UserPhoto.objects.filter(user=instance).values('image').first()
+        print(user_photo,"=-=-==-=-")
+        if user_photo:
+           representation['profile_picture'] = user_photo['image']
+        else:
+            representation['profile_picture'] = None 
 
         return representation
 

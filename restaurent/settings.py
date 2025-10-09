@@ -118,7 +118,7 @@ REST_FRAMEWORK = {
             'rest_framework.permissions.IsAuthenticated', # Example: require authentication for most views
         ),
 
-       'DEFAULT_FILTER_BACKENDS': [
+       'DEFAULT_FILTER_BACKENDS':[
            'django_filters.rest_framework.DjangoFilterBackend',
            'rest_framework.filters.SearchFilter'
         ]
@@ -149,7 +149,7 @@ CORS_ALLOWED_ORIGINS = [
 
     "http://localhost:3000",
     "http://localhost:3001",
-    "https://d7396d3965c6.ngrok-free.app",
+    "https://1dbc4d3c4372.ngrok-free.app",
 ]
 
 

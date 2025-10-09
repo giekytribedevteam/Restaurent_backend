@@ -112,7 +112,7 @@ class PasswordResetToken(models.Model):
 
  
 class UserPhoto(models.Model):
-    user = models.ForeignKey(User , on_delete=models.CASCADE , null=True ,  related_name="photo")
+    user = models.OneToOneField(User , on_delete=models.CASCADE , null=True ,  related_name="photo")
     image = models.ImageField(upload_to="user_photos/") 
  
     def __str__(self):
