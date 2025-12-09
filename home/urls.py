@@ -1,6 +1,6 @@
 from django.urls import path , include
 from rest_framework.routers import DefaultRouter
-from .views import FloorViewset  , FloorListAPIView , MenucategroyViewSet , MenuItemView , OrderViewset ,  OrderItemViewset  , PaymentViewset
+from .views import FloorViewset  , FloorListAPIView , MenucategroyViewSet , MenuItemView , OrderViewset ,  OrderItemViewset  , PaymentViewset , TableViewset
 
 router = DefaultRouter()
 router.register(r'floor',FloorViewset , basename='floor')
@@ -9,6 +9,7 @@ router.register(r'items',MenuItemView , basename='items')
 router.register(r'order' , OrderViewset , basename='order') 
 router.register(r'orderitem',OrderItemViewset , basename='orderitem' )
 router.register(r'payment',PaymentViewset, basename='payment')
+router.register(r'tables' , TableViewset , basename='tables')
 
    
 

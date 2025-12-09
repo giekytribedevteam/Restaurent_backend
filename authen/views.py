@@ -112,6 +112,7 @@ class Loginviewset(APIView):
             serializer.is_valid(raise_exception=True)
 
             user = serializer.validated_data
+          
 
             refresh = RefreshToken.for_user(user)
 

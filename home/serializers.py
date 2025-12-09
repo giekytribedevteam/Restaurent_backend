@@ -57,14 +57,14 @@ class MenuItemSerializer(serializers.ModelSerializer):
 
 class OrderItemSerializer(serializers.ModelSerializer):
    
-    itemName = serializers.CharField(source="itemId.item_name" , read_only=True)
-    price = serializers.CharField(source="itemId.item_price" , read_only=True)
+    item_name = serializers.CharField(source="itemId.item_name" , read_only=True)
+    item_price = serializers.CharField(source="itemId.item_price" , read_only=True)
     totalPrice = serializers.SerializerMethodField()
     class Meta:
         model = OrderItem
         fields = [
-            'id', 'order', 'itemId', 'itemName', 'created_at',      
-            'price', 'quantity', 'totalPrice'
+            'id', 'order', 'itemId', 'item_name',      
+            'item_price', 'quantity', 'totalPrice' 
         ]
 
     def get_totalPrice(self, obj):

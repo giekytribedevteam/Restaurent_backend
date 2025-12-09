@@ -79,7 +79,27 @@ class FloorListAPIView(APIView):
 
 class TableViewset(viewsets.ModelViewSet):
     queryset = Table.objects.all()    
-    serializer_class = TableSerializer
+    serializer_class = TableSerializer 
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({
+            "status": True,
+            "message": "Tables  list fetched successfully",
+            "data": serializer.data
+        }, status=status.HTTP_200_OK)
+    
+
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response({
+            "status": True,
+            "message": "Menucategory deleted successfully",
+            "data": None
+        }, status=status.HTTP_200_OK)
 
 class MenucategroyViewSet(viewsets.ModelViewSet):
     queryset = Menucategroy.objects.all()
@@ -105,6 +125,7 @@ class MenucategroyViewSet(viewsets.ModelViewSet):
         }, status=status.HTTP_200_OK)
 
     def create(self, request, *args, **kwargs):
+        print("data : ==>>" , request.data)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
@@ -273,6 +294,13 @@ class OrderItemViewset(viewsets.ModelViewSet):
     serializer_class = OrderItemSerializer
     permission_classes = [IsAuthenticated]
 
+
+    def get_serializer(self, *args, **kwargs):
+    
+        if isinstance(kwargs.get('data', {}), list):
+            kwargs['many'] = True
+        return super().get_serializer(*args, **kwargs)
+
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
@@ -291,15 +319,20 @@ class OrderItemViewset(viewsets.ModelViewSet):
             "data": serializer.data
         }, status=status.HTTP_200_OK)
 
+
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
+
+        message = "Order items created successfully" if isinstance(request.data, list) else "Order item created successfully"
+
         return Response({
             "status": True,
-            "message": "OrderItem created successfully",
+            "message": message,
             "data": serializer.data
         }, status=status.HTTP_201_CREATED)
+
 
 
     def update(self, request, *args, **kwargs):

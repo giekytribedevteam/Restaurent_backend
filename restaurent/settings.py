@@ -25,8 +25,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv("SECRET_KEY")
+# SECRET_KEY = os.getenv("SECRET_KEY")
 
+SECRET_KEY = "ywb&sr-=!%$yy-vm+3l_bm9!n_ret6ou4*pao044g+aq1(37p7"
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -149,7 +150,7 @@ CORS_ALLOWED_ORIGINS = [
 
     "http://localhost:3000",
     "http://localhost:3001",
-    "https://1dbc4d3c4372.ngrok-free.app",
+    "https://93c2d53c98d6.ngrok-free.app",  
 ]
 
 
