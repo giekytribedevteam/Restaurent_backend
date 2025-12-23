@@ -1,3 +1,5 @@
+import stripe
+from django.conf import settings
 from django.shortcuts import render
 from rest_framework import viewsets , status
 from rest_framework.views import APIView
@@ -5,12 +7,16 @@ from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from .models import Floorname , Table , Menucategroy , MenuItem , Order , OrderItem ,   Payment
-from .serializers import FloorSerializer , TableSerializer , MenucategroySerializer , MenuItemSerializer , OrderSerializer ,   OrderItemSerializer,  PaymentSerializer
+from .models import Floorname , Table , Menucategroy , MenuItem , Order , OrderItem , KOT  , KOTItem , Payment 
+from .serializers import FloorSerializer , TableSerializer , MenucategroySerializer , MenuItemSerializer , OrderSerializer ,   OrderItemSerializer,     KOTSerializer , KOTItemSerializer , PaymentSerializer 
+# from django.views.decorators.csrf import csrf_exempt
+# from django.http import JsonResponse
+#  Create your views here.
 
-# Create your views here.
 
-class FloorViewset(viewsets.ModelViewSet):
+# stripe.api_key = settings.STRIPE_SECRET_KEY 
+
+class FloorViewset(viewsets.ModelViewSet): 
     queryset = Floorname.objects.all()
     serializer_class = FloorSerializer 
 
@@ -332,9 +338,7 @@ class OrderItemViewset(viewsets.ModelViewSet):
             "message": message,
             "data": serializer.data
         }, status=status.HTTP_201_CREATED)
-
-
-
+    
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
@@ -356,7 +360,104 @@ class OrderItemViewset(viewsets.ModelViewSet):
             "data": None
         }, status=status.HTTP_200_OK)
 
+class KOTListView(APIView):
+    permission_classes = [IsAuthenticated]
 
-class PaymentViewset(viewsets.ModelViewSet):
-    queryset = Payment.objects.all()
-    serializer_class = PaymentSerializer    
+    def get(self, request):
+        kots = KOT.objects.exclude(status="READY").order_by("created_at")
+        serializer = KOTSerializer(kots, many=True)
+
+        return Response({
+            "status": True,
+            "message": "KOTListView list fetched successfully",
+            "count": kots.count(),
+            "data": serializer.data
+        }, status=status.HTTP_200_OK)
+
+class KOTStautsListView(APIView):
+    permission_classes = [IsAuthenticated]
+    def patch(self , request , pk):
+        try:
+            kot = KOT.objects.get(pk=pk)
+        except KOT.DoesNotExist:
+            return Response({"status": False, "message": "KOT not found"}, status=404)
+        
+        status_value = request.data.get("status")
+        if status_value not in ["PENDING" , "COOKING" , "READY"]:
+           return Response({"status":False , "message":"Invalid status"} , status=404)
+        
+        kot.status = status_value
+        kot.save()
+
+        return Response({
+            "status": True,
+            "message": f"KOT marked {status_value}"
+        },status=status.HTTP_200_OK)
+
+# class PaymentViewset(viewsets.ModelViewSet):
+#     queryset = Payment.objects.all()
+#     serializer_class = PaymentSerializer 
+
+
+# @csrf_exempt
+# def stripe_webhook(request):
+#     payload = request.body
+#     sig_header = request.META.get("HTTP_STRIPE_SIGNATURE")
+
+#     try:
+#         event = stripe.Webhook.construct_event(
+#             payload,
+#             sig_header,
+#             settings.STRIPE_WEBHOOK_SECRET
+#         )
+#     except stripe.error.SignatureVerificationError:
+#         return JsonResponse({"error": "Invalid signature"}, status=400)
+
+#     if event["type"] == "payment_intent.succeeded":
+#         intent = event["data"]["object"]
+#         order_id = intent["metadata"]["order_id"]
+
+#         payment = Payment.objects.get(order_id=order_id)
+#         payment.payment_status = "PAID"
+#         payment.save(update_fields=["payment_status"])
+
+#         # OPTIONAL: mark order completed
+#         payment.order.status = "COMPLETED"
+#         payment.order.save(update_fields=["status"])
+
+#     return JsonResponse({"status": "success"})
+
+
+# class CreateStripePaymentIntent(APIView):
+#     permission_classes = [IsAuthenticated]
+
+#     def post(self, request):
+#         order_id = request.data.get("order_id")
+
+#         try:
+#             order = Order.objects.get(id=order_id)
+#         except Order.DoesNotExist:
+#             return Response({"status": False, "message": "Order not found"}, status=404)
+
+
+#         amount = int(order.grandTotal * 100)
+
+#         intent = stripe.PaymentIntent.create(
+#             amount=amount,
+#             currency="inr",
+#             metadata={"order_id": order.id}
+#         )
+
+#         payment, _ = Payment.objects.get_or_create(
+#             order=order,
+#             defaults={
+#                 "payment_method": "STRIPE",
+#                 "transaction_id": intent.id
+#             }
+#         )
+
+#         return Response({
+#             "status": True,
+#             "client_secret": intent.client_secret,
+#             "payment_id": payment.id
+#         }, status=status.HTTP_200_OK)

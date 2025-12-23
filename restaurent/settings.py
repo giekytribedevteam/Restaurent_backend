@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     "corsheaders",
     'authen',
     'home',
+    'payments'
     
 ]
 
@@ -143,22 +144,16 @@ SIMPLE_JWT = {
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-
-
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
 
     "http://localhost:3000",
     "http://localhost:3001",
-    "https://93c2d53c98d6.ngrok-free.app",  
+    "https://770b6e21c881.ngrok-free.app",
 ]
-
-
-
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
 
 DATABASES = {
     'default': {
@@ -202,6 +197,15 @@ USE_I18N = True
 USE_TZ = True
 
 
+
+# Payment Method integration with stripe
+STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
+STRIPE_PUBLISHABLE_KEY = os.getenv("STRIPE_PUBLISHABLE_KEY")
+STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
+
+
+
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
@@ -213,10 +217,3 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-# settings.py
-
-# CORS_ALLOW_CREDENTIALS = True
-# CORS_ALLOWED_ORIGIN_REGEXES = [
-#     r"^https:\/\/.*\.ngrok-free\.app$",
-#     r"^http:\/\/localhost:300\d$",  # matches 3000, 3001, etc.
-# ]

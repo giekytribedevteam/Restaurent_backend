@@ -1,8 +1,10 @@
 from django.db import models 
+from django import forms
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager , AbstractUser
 from django.utils.crypto import get_random_string
 from django.utils.timezone import now
 from datetime import timedelta
+from datetime import datetime
 # Create your models here.
 
 class UserRoles(models.TextChoices):
@@ -63,9 +65,10 @@ class User(AbstractBaseUser , PermissionsMixin):
   username = models.CharField(max_length=100 , blank=True)
   first_name = models.CharField(max_length=100 , blank=True)
   last_name = models.CharField(max_length=100 , blank=True)
-  date_joined = models.DateTimeField(blank=True, null=True)
+  created_at = models.DateTimeField(auto_now_add=True)
   role = models.CharField(max_length=100,choices=UserRoles.choices,default=UserRoles.WAITER)
   phone_number = models.CharField(max_length=50,blank=True)
+  date_joined = models.DateTimeField(auto_now_add=True)
   address = models.CharField(max_length=255,blank=True)
   adhar_proof = models.CharField(max_length=150,blank=True)
   pan_number = models.CharField(max_length=150,blank=True)

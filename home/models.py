@@ -3,11 +3,14 @@ from authen.models import User
 from decimal import Decimal, getcontext
 
 STATUS_CHOICES = (
-        ('PENDING', 'Pending'),
-        ('PROCESSING', 'Processing'),
-        ('COMPLETED', 'Completed'),
-        ('CANCELLED', 'Cancelled'),
-    )
+    ('PENDING', 'Pending'),
+    ('PROCESSING', 'Processing'),
+    ('SUCCESS', 'Success'),    
+    ('FAILED', 'Failed'),  
+    ('COMPLETED','Completed'),     
+    ('CANCELLED', 'Cancelled'),
+)
+
 
 
 ORDER_TYPES = (
@@ -61,34 +64,6 @@ class MenuItem(TimeStampedModel):
       
 
 
-# class Order(TimeStampedModel):
-#     order_type = models.CharField(max_length=250 , choices=ORDER_TYPE , default='Dine In')
-#     tableID = models.ForeignKey(Table, on_delete=models.CASCADE , null=True , related_name="order_tables")
-#     userId = models.ForeignKey(User , on_delete=models.CASCADE , null=True ,  related_name="order_user")
-#     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
-#     subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-#     tax =  models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-#     discount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-#     grandtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-    
-#     def __str__(self):
-#         return self.status
-      
-
-# class OrderItem(TimeStampedModel):
-#     orderId = models.ForeignKey(Order , on_delete=models.CASCADE , null=True , related_name="items")
-#     menu_item = models.ForeignKey(MenuItem , on_delete=models.CASCADE , related_name="items")
-#     quantity = models.PositiveIntegerField(default=1)
-#     order_price = models.DecimalField(max_digits=10,decimal_places=2 , default=0)
-
-#     def __str__(self):
-#         return super().__str__()   
-
-
-
-
-
-
 class Order(TimeStampedModel):
 
 
@@ -140,6 +115,34 @@ class OrderItem(models.Model):
         return self.itemName
 
 
+class KOT(models.Model):
+  
+  STATUS_CHOICES = (
+        ("PENDING", "Pending"),
+        ("COOKING", "Cooking"),
+        ("READY", "Ready"),
+    )
+
+  order = models.ForeignKey(Order , on_delete=models.CASCADE , null=True , related_name="kots")
+  kot_number = models.IntegerField()
+  status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="PENDING")
+  created_at = models.DateTimeField(auto_now_add=True)
+
+  def __str__(self):
+      return self.kot_number
+  
+ 
+class KOTItem(models.Model):
+    kot = models.ForeignKey(KOT ,on_delete=models.CASCADE , null=True , related_name="items")
+    items = models.ForeignKey(MenuItem , on_delete=models.CASCADE) 
+    quantity = models.IntegerField(default=1)
+    
+    @property
+    def item_name(self):
+        return self.items.item_name
+
+    def __str__(self):
+        return self.items           
 
       
 class Payment(models.Model):    

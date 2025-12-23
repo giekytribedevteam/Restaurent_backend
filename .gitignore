@@ -1,2 +1,6 @@
 # .gitingore
+venv/
+__pycache__/
+*.pyc
+*.pyo
 .env
