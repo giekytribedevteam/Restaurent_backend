@@ -1,6 +1,7 @@
 from rest_framework import serializers
-from .models import User ,  Floorname , Table , Menucategroy , MenuItem , Order , OrderItem , Payment
-from decimal import Decimal
+from django.utils import timezone
+from .models import User ,  Floorname , Table , Menucategroy , MenuItem , Order , OrderItem , Payment , KOT , KOTItem
+from decimal import Decimal 
 
 
 class   TableSerializer(serializers.ModelSerializer): 
@@ -69,8 +70,6 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
     def get_totalPrice(self, obj):
         return obj.price * obj.quantity
-    
-
 
     def create(self, validated_data):
         order = validated_data.get("order")
@@ -85,32 +84,76 @@ class OrderItemSerializer(serializers.ModelSerializer):
             order.update_totals() 
             return existing_item
 
-      
+    
+        last_kot = order.kots.order_by("-kot_number").first()
+        kot_number = 1 if last_kot is None else last_kot.kot_number + 1
+
+        kot = KOT.objects.create(order=order, kot_number=kot_number)
+
+
+        KOTItem.objects.create(
+        kot=kot,
+        items=item,
+        quantity=quantity   
+        )
+
         order_item = super().create(validated_data)
         order.update_totals()  
         return order_item
     
     def update(self, instance, validated_data):
-        instance.quantity = validated_data.get('quantity', instance.quantity)
+        print("=-=--=-" , validated_data)
+        instance.quantity = validated_data.get('quantity', instance.quantity)   
         instance.save()
         if instance.order:
             instance.order.update_totals()
 
         return instance
-    
 
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
 
 class OrderSerializer(serializers.ModelSerializer):
-    items = OrderItemSerializer(many=True, read_only=True)
+    items = OrderItemSerializer(many=True , required=False)
+    # kots = KOTSerializer(many=True , read_only=True)
 
     class Meta:
         model = Order
         fields = [
             'id', 'orderType', 'tableID', 'userId', 'status', 'created_at',
-            'subtotal', 'tax', 'discount', 'grandTotal', 'person' ,  'items'
-        ]            
+            'subtotal', 'tax', 'discount', 'grandTotal', 'person' ,'items'
+        ]      
+   
+    # def to_representation(self, instance):
+    #     instance.update_totals()
+        
 
+class KOTItemSerializer(serializers.ModelSerializer):
+    
+    item_name = serializers.CharField(
+        source="items.item_name",
+        read_only=True
+    )
 
+    class Meta:
+        model = KOTItem
+        fields = [
+            "id" , "items" ,"item_name" ,"quantity"
+        ]
+
+class KOTSerializer(serializers.ModelSerializer):
+    items = KOTItemSerializer(many=True , read_only=True)
+    order_type = serializers.CharField(source="order.orderType")
+    table = serializers.CharField(source="order.tableID.table_number")
+    time_since = serializers.SerializerMethodField()
+    class Meta:
+        model = KOT
+        fields = [
+            "id" , "kot_number" , "order_type" , "table" , "status" , "created_at" , "time_since","items"
+        ]
+
+    def get_time_since(self, obj):
+      delta = timezone.now() - obj.created_at
+      return int(delta.total_seconds() / 60) 
 
 class PaymentSerializer(serializers.ModelSerializer):
      order = OrderSerializer(read_only = True)
@@ -120,83 +163,5 @@ class PaymentSerializer(serializers.ModelSerializer):
          fields = ['id' , 'order_id' , 'order'  , 'payment_method' , 'payment_status','transaction_id']
 
 
-
-# class OrderItemSerializer(serializers.ModelSerializer):
-#       item_name = serializers.CharField(source="menu_itemID.item_name" , read_only=True)
-#       class Meta:
-#            model = OrderItem
-#            fields = ['id' , 'menu_item' ,'item_name' , 'orderId' , 'quantity' , 'order_price']  
-
-
-# class OderSerializer(serializers.ModelSerializer):
-#     items = OrderItemSerializer(many=True)
-#     class Meta:
-#         model = Order
-#         fields = ['id' , 'userId' , 'table_orderID' ,  'items',  'order_type' , 'status' , 'discount'  , 'tax' , 'total_amount']
-#         extra_kwargs = {
-#             'table_order': {'required': False}
-#         }
-
-#     def create(self, validated_data):
-        
-#         items_data = validated_data.pop("items" , [])
-#         user = self.context['request'].user
-#         order = Order.objects.create( userId=user ,  **validated_data) 
-
-#         total = 0 
-#         for items in items_data:
-#           menu_item = items['menu_item']
-#           quanty = items['quantity']
-#           price = menu_item.item_price
-
-#           OrderItem.objects.create(
-#             orderId = order,  
-#             menu_item =  menu_item,
-#             quantity = quanty, 
-#             order_price = price
-#          ) 
-          
-#           total += quanty * price  
-          
-#         order.total_amount = total 
-#         order.save()
-#         return order 
-         
-
-#     def update(self, instance, validated_data):
-       
-#         items_data = validated_data.pop('items', None)
-
-  
-#         for attr, value in validated_data.items():
-#             setattr(instance, attr, value)
-
-        
-#         if items_data is not None:
-     
-#             instance.items.all().delete()
-
-         
-#             total = 0
-#             for item in items_data:
-#                 menu_item = item['menu_item']
-#                 quantity = item['quantity']
-#                 price = menu_item.item_price
-
-#                 OrderItem.objects.create(
-#                     order=instance,
-#                     menu_item=menu_item,
-#                     quantity=quantity,
-#                     order_price=price
-#                 )
-
-#                 total += quantity * price
-
-          
-#             instance.total_amount = total
-
-#         instance.save()
-#         return instance
-    
 
 

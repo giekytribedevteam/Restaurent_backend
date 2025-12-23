@@ -10,7 +10,7 @@ import string
 from .models import User , PasswordResetToken ,UserPhoto
 
 class UserCreateSerializers(serializers.ModelSerializer):
-  
+     
     class Meta:
         model = User
         fields = [ 'id','profile_picture' , 'first_name' , 'last_name' , 'email' , 'date_joined' ,'role' , 'phone_number' ,'address' , 'adhar_proof' , 'gender' , 'account_number' ,'ifsc_code' , 'username' , 'pan_number' , 'nationality']
@@ -48,10 +48,10 @@ class UserCreateSerializers(serializers.ModelSerializer):
 class UserSerializers(serializers.ModelSerializer):
 
     password = serializers.CharField(write_only=True ,required=False)
-  
+
     class Meta:
         model = User
-        fields = [ 'id' , 'profile_picture'  , 'first_name' , 'last_name' , 'email' , 'date_joined' ,'role' , 'phone_number' ,'address' , 'adhar_proof' , 'gender' , 'account_number' ,'ifsc_code' , 'username' , 'pan_number' , 'nationality' , 'password']
+        fields = [ 'id' , 'profile_picture'  , 'first_name' , 'last_name' , 'email' , 'date_joined', 'created_at' ,'role' , 'phone_number' ,'address' , 'adhar_proof' , 'gender' , 'account_number' ,'ifsc_code' , 'username' , 'pan_number' , 'nationality' , 'password']
 
     def create(self, validated_data):
         return User.objects.create_user(**validated_data)
