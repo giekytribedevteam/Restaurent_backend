@@ -113,6 +113,9 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
 
 REST_FRAMEWORK = {
+        
+        "DATETIME_FORMAT": "%Y-%m-%d %I:%M:%S %p",
+
         'DEFAULT_AUTHENTICATION_CLASSES': (
             'rest_framework_simplejwt.authentication.JWTAuthentication',
         ),
@@ -149,7 +152,7 @@ CORS_ALLOWED_ORIGINS = [
 
     "http://localhost:3000",
     "http://localhost:3001",
-    "https://770b6e21c881.ngrok-free.app",
+    "https://8027-2401-4900-8fe2-5bfb-de8f-1c4a-8f9-5b9.ngrok-free.app",
 ]
 
 # Database
@@ -190,7 +193,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Kolkata'
 
 USE_I18N = True
 

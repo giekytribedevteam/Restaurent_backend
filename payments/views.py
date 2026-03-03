@@ -9,54 +9,6 @@ from home.models import Payment , Order
 from home.serializers import PaymentSerializer
 from .services import create_payment_intent
 
-# @csrf_exempt
-# def stripe_webhook(request):
-    
-#     print("WEBHOOK HIT")
-
-#     payload = request.body
-#     sig_header = request.META.get("HTTP_STRIPE_SIGNATURE")
-
-#     try:
-#         event = stripe.Webhook.construct_event(
-#             payload, sig_header, settings.STRIPE_WEBHOOK_SECRET
-#         )
-#     except Exception:
-#         return JsonResponse({"error": "Invalid webhook"}, status=400)
-    
-    
-#     print("EVENT TRIGGER" ,event)
-
-#     #  Payment succeeded
-#     if event["type"] == "payment_intent.succeeded":
-#         intent = event["data"]["object"]
-#         order_id = intent["metadata"]["order_id"]
-
-#         order = Order.objects.get(id=order_id)
-
-#         Payment.objects.update_or_create(
-#             order=order,
-#             defaults={
-#                 "payment_status": "SUCCESS",
-#                 "transaction_id": intent.id,
-#                 "payment_method": intent.payment_method_types[0]
-#             }
-#         )
-
-#         order.status = "COMPLETED"
-#         order.save()
-    
-#     print("EVENT TRIGGER" , event["type"])
-
-#     # Payment failed
-#     if event["type"] == "payment_intent.payment_failed":
-#         intent = event["data"]["object"]
-#         Payment.objects.filter(
-#             transaction_id=intent.id
-#         ).update(payment_status="FAILED")
-
-#     return JsonResponse({"status": "ok"})
-
 @csrf_exempt
 def stripe_webhook(request):
     print("WEBHOOK HIT")
@@ -100,16 +52,16 @@ def stripe_webhook(request):
         print("PAYMENT SUCCESS UPDATED")
 
     return JsonResponse({"status": "ok"})
-
+   
 
 
 class PaymentViewset(viewsets.ModelViewSet):
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
     permission_classes = [IsAuthenticated]
-
+    
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
+        serializer = self.get_serializer(data=request.data) 
         serializer.is_valid(raise_exception=True)
 
         order = serializer.validated_data["order"]

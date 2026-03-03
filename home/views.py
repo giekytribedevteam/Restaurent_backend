@@ -1,5 +1,7 @@
 import stripe
 from django.conf import settings
+from django.db import transaction
+from django.db.models import Max
 from django.shortcuts import render
 from rest_framework import viewsets , status
 from rest_framework.views import APIView
@@ -9,13 +11,8 @@ from rest_framework import filters
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from .models import Floorname , Table , Menucategroy , MenuItem , Order , OrderItem , KOT  , KOTItem , Payment 
 from .serializers import FloorSerializer , TableSerializer , MenucategroySerializer , MenuItemSerializer , OrderSerializer ,   OrderItemSerializer,     KOTSerializer , KOTItemSerializer , PaymentSerializer 
-# from django.views.decorators.csrf import csrf_exempt
-# from django.http import JsonResponse
+
 #  Create your views here.
-
-
-# stripe.api_key = settings.STRIPE_SECRET_KEY 
-
 class FloorViewset(viewsets.ModelViewSet): 
     queryset = Floorname.objects.all()
     serializer_class = FloorSerializer 
@@ -353,12 +350,149 @@ class OrderItemViewset(viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
+        # order = instance.order
         self.perform_destroy(instance)
+        # if order:
+        #     order.update_totals()
         return Response({
             "status": True,
             "message": "OrderItem deleted successfully",
             "data": None
         }, status=status.HTTP_200_OK)
+    
+
+class GenerateKOTView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request, order_id):
+
+        try:
+            order = Order.objects.select_for_update().get(id=order_id)
+        except Order.DoesNotExist:
+            return Response(
+                {"status": False, "message": "Order not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Lock order items
+        items = order.items.select_for_update()
+
+        new_items = []
+
+        for item in items:
+            # delta logic (professional rule)
+            diff = item.quantity - item.sent_quantity
+
+            if diff > 0:
+                new_items.append((item, diff))
+
+        if not new_items:
+            return Response({
+                "status": False,
+                "message": "No new items for KOT"
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Global running KOT number (safe way)
+        last_kot = (
+            KOT.objects.select_for_update()
+            .order_by("-kot_number")
+            .first()
+        )
+
+        kot_number = 1 if not last_kot else last_kot.kot_number + 1
+
+        kot = KOT.objects.create(
+            order=order,
+            kot_number=kot_number
+        )
+        
+        kot_items = []
+
+        for item, diff in new_items:
+            kot_items.append(
+                KOTItem(
+                    kot=kot,
+                    items=item.itemId,
+                    quantity=diff,
+                    is_sent_kot=True
+                    
+                )
+            )
+
+            # update sent quantity
+            item.sent_quantity += diff
+            item.save(update_fields=["sent_quantity"])
+
+        KOTItem.objects.bulk_create(kot_items)
+     
+
+        return Response({
+            "status": True,
+            "message": "KOT generated successfully",
+            "kot_id": kot.id,
+            "kot_number": kot.kot_number
+        }, status=status.HTTP_201_CREATED)
+    
+# class GenerateKOTView(APIView):
+#     permission_classes = [IsAuthenticated]
+
+#     @transaction.atomic
+#     def post(self, request, order_id):
+
+#         try:
+#             # Lock order row
+#             order = Order.objects.select_for_update().get(id=order_id)
+#         except Order.DoesNotExist:
+#             return Response(
+#                 {"status": False, "message": "Order not found"},
+#                 status=status.HTTP_404_NOT_FOUND
+#             )
+
+#         #  Lock items also
+#         items = order.items.select_for_update().filter(is_sent_to_kot=False)
+
+#         if not items.exists():
+#             return Response({
+#                 "status": False,
+#                 "message": "No new items for KOT"
+#             }, status=status.HTTP_400_BAD_REQUEST)
+
+#         #  GLOBAL KOT NUMBER (recommended for kitchen)
+#         last_number = KOT.objects.select_for_update().aggregate(
+#             Max("kot_number")
+#         )["kot_number__max"]
+
+#         kot_number = 1 if last_number is None else last_number + 1
+
+#         kot = KOT.objects.create(
+#             order=order,
+#             kot_number=kot_number
+#         )
+
+#         # create KOT items
+#         kot_items = []
+#         for item in items:
+#             kot_items.append(
+#                 KOTItem(
+#                     kot=kot,
+#                     items=item.itemId,
+#                     quantity=item.quantity
+#                 )
+#             )
+
+#         KOTItem.objects.bulk_create(kot_items)
+
+#         # mark items sent
+#         items.update(is_sent_to_kot=True)
+
+#         return Response({
+#             "status": True,
+#             "message": "KOT generated successfully",
+#             "kot_id": kot.id,
+#             "kot_number": kot.kot_number
+#         }, status=status.HTTP_201_CREATED)
+
 
 class KOTListView(APIView):
     permission_classes = [IsAuthenticated]
@@ -394,70 +528,4 @@ class KOTStautsListView(APIView):
             "message": f"KOT marked {status_value}"
         },status=status.HTTP_200_OK)
 
-# class PaymentViewset(viewsets.ModelViewSet):
-#     queryset = Payment.objects.all()
-#     serializer_class = PaymentSerializer 
 
-
-# @csrf_exempt
-# def stripe_webhook(request):
-#     payload = request.body
-#     sig_header = request.META.get("HTTP_STRIPE_SIGNATURE")
-
-#     try:
-#         event = stripe.Webhook.construct_event(
-#             payload,
-#             sig_header,
-#             settings.STRIPE_WEBHOOK_SECRET
-#         )
-#     except stripe.error.SignatureVerificationError:
-#         return JsonResponse({"error": "Invalid signature"}, status=400)
-
-#     if event["type"] == "payment_intent.succeeded":
-#         intent = event["data"]["object"]
-#         order_id = intent["metadata"]["order_id"]
-
-#         payment = Payment.objects.get(order_id=order_id)
-#         payment.payment_status = "PAID"
-#         payment.save(update_fields=["payment_status"])
-
-#         # OPTIONAL: mark order completed
-#         payment.order.status = "COMPLETED"
-#         payment.order.save(update_fields=["status"])
-
-#     return JsonResponse({"status": "success"})
-
-
-# class CreateStripePaymentIntent(APIView):
-#     permission_classes = [IsAuthenticated]
-
-#     def post(self, request):
-#         order_id = request.data.get("order_id")
-
-#         try:
-#             order = Order.objects.get(id=order_id)
-#         except Order.DoesNotExist:
-#             return Response({"status": False, "message": "Order not found"}, status=404)
-
-
-#         amount = int(order.grandTotal * 100)
-
-#         intent = stripe.PaymentIntent.create(
-#             amount=amount,
-#             currency="inr",
-#             metadata={"order_id": order.id}
-#         )
-
-#         payment, _ = Payment.objects.get_or_create(
-#             order=order,
-#             defaults={
-#                 "payment_method": "STRIPE",
-#                 "transaction_id": intent.id
-#             }
-#         )
-
-#         return Response({
-#             "status": True,
-#             "client_secret": intent.client_secret,
-#             "payment_id": payment.id
-#         }, status=status.HTTP_200_OK)

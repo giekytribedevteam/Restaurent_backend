@@ -143,3 +143,35 @@ class KitchenKOTStatusUpdateView(APIView):
             "status": True,
             "message": f"KOT marked {status_value}"
         })
+
+
+from rest_framework import serializers
+from django.contrib.auth import authenticate
+from .models import User  # Import the User model
+from rest_framework.exceptions import ValidationError
+
+class LoginSerializer(serializers.Serializer):
+    email = serializers.CharField()
+    password = serializers.CharField(write_only=True)
+
+    def validate(self, data):
+        email = data.get('email')
+        password = data.get('password')
+
+        # Check if both email and password are provided
+        if not email or not password:
+            raise serializers.ValidationError("Both email and password are required!")
+
+        # Perform password length validation
+        if len(password) < 5:
+            raise serializers.ValidationError("Password must be at least 5 characters long!")
+
+        # Authenticate the user using the provided credentials
+        user = authenticate(email=email, password=password)
+
+        # If authentication fails, raise a validation error
+        if not user:
+            raise serializers.ValidationError("Invalid email or password!")
+
+        # Return the authenticated user data
+        return {'user': user}

@@ -1,6 +1,6 @@
 from django.urls import path , include
 from rest_framework.routers import DefaultRouter
-from home.views import FloorViewset  , FloorListAPIView , MenucategroyViewSet , MenuItemView , OrderViewset ,  OrderItemViewset  , KOTListView,KOTStautsListView ,TableViewset
+from home.views import FloorViewset  , FloorListAPIView , MenucategroyViewSet , MenuItemView , OrderViewset ,  OrderItemViewset  , KOTListView,KOTStautsListView ,TableViewset , GenerateKOTView
 
 router = DefaultRouter()
 router.register(r'floor',FloorViewset , basename='floor')
@@ -14,6 +14,7 @@ router.register(r'tables' , TableViewset , basename='tables')
 urlpatterns = [
     path('',include(router.urls)),
     path("table/",FloorListAPIView.as_view() , name="tables"),
+    path("kitchen/<int:order_id>/generate-kot/" , GenerateKOTView.as_view() ,name="generate-kot"),
     path("kitchen/kots/",KOTListView.as_view(), name="kitchen-kots"),
     path("kitchen/status/<int:pk>/",KOTStautsListView.as_view(), name="kitchen-status"),      
 ]   

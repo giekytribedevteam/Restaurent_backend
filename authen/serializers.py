@@ -67,7 +67,9 @@ class LoginSerializer(serializers.Serializer):
         password = data.get('password')
         if not email or not password:
             raise serializers.ValidationError("Both email and password are required !")
-        print(User.objects.all())
+        
+        # if len(password) < 5:
+        #     raise serializers.ValidationError("Password must be at least 5 characters long!")
         user = authenticate(email=email , password=password)
         if not user:
             raise  serializers.ValidationError("invaild email and password !")
@@ -83,7 +85,6 @@ class ChangePasswordSerializer(serializers.Serializer):
 
     def validate_old_password(self, value):
         user = self.context["request"].user
-        print("=-=-=-=" ,  user)
         if not user.check_password(value):
             raise serializers.ValidationError("Old password is incorrect.")
         return value
@@ -157,7 +158,6 @@ class GetMeSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         user_photo = UserPhoto.objects.filter(user=instance).values('image').first()
-        print(user_photo,"=-=-==-=-")
         if user_photo:
            representation['profile_picture'] = user_photo['image']
         else:
